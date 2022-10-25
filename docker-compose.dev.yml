@@ -35,6 +35,38 @@ services:
     depends_on:
       - mongo-app
 
+  blog-fe-dev-app:
+    image: blog-fe-dev
+    build:
+      context: ./fe
+      dockerfile: dev.Dockerfile
+    volumes:
+      - ./fe:/usr/src/app # DONE: mount vậy, thì ở host nên npm i trước
+    ports:
+      - 3000:3000
+    environment:
+      # - REACT_APP_BACKEND_URL=http://localhost:3001/
+      - REACT_APP_BACKEND_URL=http://localhost:8080/api/ # after nginx
+      # - REACT_APP_BACKEND_URL=/api/ # after nginx
+      # - REACT_APP_BACKEND_URL=http://blog-be-dev-app:3001 # NOTE: not worked (but worked with nginx, config db/redis in be)
+    container_name: blog-fe-dev
+    networks:
+      - blog-app
+    depends_on:
+      - blog-be-dev-app
+
+  nginx-app:
+    image: nginx:1.20.1
+    volumes:
+      - ./nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - 8080:80
+    container_name: reverse-proxy-nginx
+    networks:
+      - blog-app
+    depends_on:
+      - blog-fe-dev-app
+
 networks:
   blog-app:
     name: blog-app-network
