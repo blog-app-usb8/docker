@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  mongo-app:
+    image: mongo
+    restart: unless-stopped
+    container_name: mongo
+    volumes:
+      - ./be/mongo/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js
+      - ./be/db:/data/db
+    ports:
+      - 3456:27017
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: root_password
+      MONGO_INITDB_DATABASE: my_database
+    networks:
+      - blog-app
+
+  blog-be-dev-app:
+    image: blog-be-dev
+    build:  # NOTE: Declares where to build if image is not found
+      context: ./be # Pick the directory as the "build context". Normal is: .
+      dockerfile: dev.Dockerfile # Which dockerfile to read. Default is Dockerfile
+    volumes:
+      - ./be:/usr/src/app # DONE: mount vậy, thì ở host nên npm i trước
+    ports:
+      - 3001:3001
+    container_name: blog-be-dev
+    environment: 
+      # - ./be/.env
+      - MONGODB_URI=mongodb://my_username:my_password@mongo:27017/my_database
+    networks:
+      - blog-app
+    depends_on:
+      - mongo-app
+
+networks:
+  blog-app:
+    name: blog-app-network
+
+# docker-compose -f docker-compose.dev.yml up # (-f flag to specify a file to run)
+# docker-compose -f docker-compose.dev.yml up --build # Build images before starting containers.
+
+# docker-compose -f docker-compose.dev.yml down --volumes
+
+# docker-compose -f docker-compose.dev.yml logs -f (-f will ensure we follow the logs)
+
+# #######################################################
+# docker ps -a
+# docker exec -it  todo-backend_mongo_1 bash
+  # mongo --> bash: mongo: command not found
+  # mongosh -u root -p root_password
+    # show dbs
+    # use my_database
+      # db.users.find({})
+      # db.blogs.find({})
+      # db.todos.insertOne({ "text" : "Increase the number of tools in my toolbelt", "done" : false })
